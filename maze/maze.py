@@ -5,6 +5,9 @@ from collections import deque
 
 # TODO: objective approach
 
+# directions of travel
+DIRS = np.array(((0, 1), (1, 0), (-1, 0), (0, -1)))
+
 # maze parameters
 ENTRANCE = (1, 0)
 EXIT = (-2, -1)
@@ -20,7 +23,6 @@ PADDING = 50
 
 # generates a random maze using iterative version of dfs (because of stack overflows)
 def generate_maze(size):
-    DIRS = np.array(((0, 2), (2, 0), (-2, 0), (0, -2)))
     maze = np.ones(size) * WALL
 
     def create_paths(start):
@@ -28,11 +30,11 @@ def generate_maze(size):
         while stack:
             cur = stack.pop()
             maze[cur] = FREE
-            for d in shuffled(DIRS):
+            for d in shuffled(DIRS * 2):
                 neighbour = cur + d
                 wall = cur + d // 2
                 t_neighbour = tuple(neighbour)
-                if possible_free_coords(size, neighbour) and maze[tuple(neighbour)] != FREE:
+                if possible_free_coords(size, neighbour) and maze[t_neighbour] != FREE:
                     maze[tuple(wall)] = FREE
                     stack.append(cur)
                     stack.append(t_neighbour)
@@ -76,7 +78,6 @@ def get_path(maze):
     end = np.array(maze.shape) + EXIT
     visited = set()
     previous = {ENTRANCE: None}
-    DIRS = np.array(((0, 1), (1, 0), (-1, 0), (0, -1)))
     while q:
         cur_node = q.popleft()
         visited.add(tuple(cur_node))
@@ -105,6 +106,6 @@ def solve_maze(maze):
 
 
 if __name__ == '__main__':
-    maze = generate_maze((3001, 3001))
+    maze = generate_maze((351, 351))
     solve_maze(maze)
     save_maze(maze)
