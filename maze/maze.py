@@ -1,8 +1,9 @@
 import numpy as np
-import random
 from PIL import Image, ImageDraw
 from copy import copy
 from collections import deque
+
+# TODO: objective approach
 
 # maze parameters
 ENTRANCE = (1, 0)
@@ -17,6 +18,7 @@ SOLUTION = 2
 BLOCK_SIZE = 10
 PADDING = 50
 
+# generates a random maze using iterative version of dfs (because of stack overflows)
 def generate_maze(size):
     DIRS = np.array(((0, 2), (2, 0), (-2, 0), (0, -2)))
     maze = np.ones(size) * WALL
@@ -42,21 +44,23 @@ def generate_maze(size):
     maze[EXIT] = FREE
     return maze
 
-def render_maze(maze):
+def save_maze(maze, path='maze.png'):
     pic = Image.new('RGB', tuple(maze.shape * np.array([BLOCK_SIZE]) + 2 * PADDING), color='#FFF')
     draw = ImageDraw.Draw(pic)
     for x, row in enumerate(maze):
         for y, block in enumerate(row):
             color = '#FFF'
-            if maze[x, y] == WALL: color = '#000'
-            elif maze[x, y] == SOLUTION: color = '#F00'
+            if block == WALL: color = '#000'
+            elif block == SOLUTION: color = '#F00'
             draw.rectangle([x * BLOCK_SIZE + PADDING, y * BLOCK_SIZE + PADDING, \
                             (x + 1) * BLOCK_SIZE + PADDING, (y + 1) * BLOCK_SIZE + PADDING], fill=color)
-    pic.save('maze.png')
+    pic.save(path)
 
+# used for generating maze (doesn't let borders to be a free place)
 def possible_free_coords(size, coords):
     return ((0, 0) < coords).all() and (coords + 1 < size).all()
 
+# used for everything else (actual coord validator)
 def valid_coords(size, coords):
     return ((0, 0) <= coords).all() and (coords < size).all()
 
@@ -65,6 +69,8 @@ def shuffled(arr):
     np.random.shuffle(ret)
     return ret
 
+# finds shortest path in a maze using simple bfs
+# TODO: use A* with heuristic being manhattan distance
 def get_path(maze):
     q = deque([ENTRANCE])
     end = np.array(maze.shape) + EXIT
@@ -77,6 +83,7 @@ def get_path(maze):
         if (cur_node == end).all():
             path = [tuple(end)]
             prev = previous[tuple(end)]
+            # reconstruct the path
             while prev is not None:
                 path.append(prev)
                 prev = previous[prev]
@@ -84,10 +91,11 @@ def get_path(maze):
         for d in DIRS:
             neighbour = cur_node + d
             t_neighbour = tuple(neighbour)
-            if valid_coords(maze.shape, neighbour) and maze[t_neighbour] == 1 and t_neighbour not in visited:
+            if valid_coords(maze.shape, neighbour) and maze[t_neighbour] == FREE and t_neighbour not in visited:
                 q.append(neighbour)
                 previous[t_neighbour] = tuple(cur_node)
 
+# finds path in a maze and marks it
 def solve_maze(maze):
     path = get_path(maze)
     if not path:
@@ -97,6 +105,6 @@ def solve_maze(maze):
 
 
 if __name__ == '__main__':
-    maze = generate_maze((1001, 1001))
+    maze = generate_maze((3001, 3001))
     solve_maze(maze)
-    render_maze(maze)
+    save_maze(maze)
